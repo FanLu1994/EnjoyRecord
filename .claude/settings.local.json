@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(frontend-design)",
+      "Bash(npm run build)",
+      "Bash(npx tsc:*)",
+      "WebSearch",
+      "Bash(node --version)",
+      "Bash(npm install:*)",
+      "Skill(ui-ux-pro-max)",
+      "Bash(python3 .claude/skills/ui-ux-pro-max/scripts/search.py:*)",
+      "Bash(python .claude/skills/ui-ux-pro-max/scripts/search.py:*)",
+      "Bash(python:*)"
+    ]
+  }
+}

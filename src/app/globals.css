@@ -1,26 +1,540 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+
+/* ============================================
+   DIGITAL TERMINAL THEME - LIGHT MODE
+   Retro-futuristic computing aesthetic
+   ============================================ */
+
+@custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Terminal Color Palette - Light */
+  --term-bg: #f5f3ef;
+  --term-bg-secondary: #ebe8e1;
+  --term-primary: #00a86b;
+  --term-primary-dim: #008a56;
+  --term-secondary: #d48806;
+  --term-accent: #0798b4;
+  --term-error: #c53030;
+  --term-warning: #dd6b20;
+
+  /* Text Colors */
+  --term-text: #1a1915;
+  --term-text-dim: #6b6560;
+  --term-text-bright: #000000;
+
+  /* Borders & Lines */
+  --term-border: #d4cfc5;
+  --term-border-light: #c4bfb5;
+  --term-grid: #e8e4dd;
+
+  /* Fonts */
+  --font-mono: "JetBrains Mono", "Fira Code", "SF Mono", "Consolas", monospace;
+  --font-terminal: "VT323", "Share Tech Mono", monospace;
+
+  /* Spacing */
+  --page-max-width: 800px;
+  --content-padding: 2rem;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: var(--term-bg);
+  --color-foreground: var(--term-text);
+  --font-mono: var(--font-mono);
+  --font-sans: var(--font-mono);
+  --font-display: var(--font-terminal);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ============================================
+   BASE STYLES
+   ============================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-mono);
+  background: var(--term-bg);
+  color: var(--term-text);
+  min-height: 100vh;
+  line-height: 1.6;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Scanline Overlay - lighter for light theme */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.02) 0px,
+    rgba(0, 0, 0, 0.02) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  opacity: 0.4;
+}
+
+/* Subtle noise texture */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9998;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  opacity: 0.02;
+}
+
+/* ============================================
+   TYPOGRAPHY
+   ============================================ */
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-terminal);
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--term-text-bright);
+}
+
+h1 {
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  text-shadow: 0 0 10px var(--term-primary-dim);
+}
+
+h2 {
+  font-size: clamp(1.25rem, 3vw, 1.5rem);
+}
+
+p {
+  margin-bottom: 1em;
+}
+
+/* Selection */
+::selection {
+  background: var(--term-primary);
+  color: #ffffff;
+}
+
+/* ============================================
+   LINKS
+   ============================================ */
+
+a {
+  color: var(--term-primary);
+  text-decoration: none;
+  position: relative;
+  transition: color 0.15s ease;
+}
+
+a:hover {
+  color: var(--term-primary-dim);
+  text-shadow: 0 0 8px var(--term-primary-dim);
+}
+
+/* ============================================
+   PAGE LAYOUT
+   ============================================ */
+
+.term-page {
+  max-width: var(--page-max-width);
+  margin: 0 auto;
+  padding: var(--content-padding);
+  min-height: 100vh;
+}
+
+/* ============================================
+   DIGITAL EFFECTS
+   ============================================ */
+
+/* Cursor blink effect */
+.term-cursor {
+  display: inline-block;
+  width: 0.6em;
+  height: 1.2em;
+  background: var(--term-primary);
+  animation: blink 1s step-end infinite;
+  vertical-align: text-bottom;
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+/* Typewriter effect */
+.typewriter {
+  overflow: hidden;
+  white-space: nowrap;
+  border-right: 2px solid var(--term-primary);
+  animation:
+    typing 0.5s steps(20, end),
+    blink-caret 0.75s step-end infinite;
+}
+
+@keyframes typing {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+@keyframes blink-caret {
+  from, to { border-color: transparent; }
+  50% { border-color: var(--term-primary); }
+}
+
+/* Glitch effect on hover */
+.glitch-hover {
+  position: relative;
+}
+
+.glitch-hover:hover {
+  animation: glitch 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both infinite;
+}
+
+@keyframes glitch {
+  0% {
+    transform: translate(0);
+  }
+  20% {
+    transform: translate(-2px, 2px);
+  }
+  40% {
+    transform: translate(-2px, -2px);
+  }
+  60% {
+    transform: translate(2px, 2px);
+  }
+  80% {
+    transform: translate(2px, -2px);
+  }
+  100% {
+    transform: translate(0);
+  }
+}
+
+/* Text glow effect - subtle for light theme */
+.term-glow {
+  text-shadow:
+    0 0 5px var(--term-primary-dim),
+    0 0 10px var(--term-primary-dim);
+}
+
+/* Flicker effect */
+.term-flicker {
+  animation: flicker 4s infinite;
+}
+
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  41.99% { opacity: 1; }
+  42% { opacity: 0.95; }
+  43% { opacity: 1; }
+  45% { opacity: 0.97; }
+  45.01% { opacity: 1; }
+}
+
+/* ============================================
+   COMPONENT STYLES
+   ============================================ */
+
+/* Terminal Card */
+.term-card {
+  background: var(--term-bg-secondary);
+  border: 1px solid var(--term-border);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  position: relative;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.2s ease-out, border-color 0.2s ease-out, transform 0.2s ease-out;
+}
+
+.term-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.term-card:focus-within {
+  border-color: var(--term-primary);
+  box-shadow: 0 0 0 3px rgba(0, 168, 107, 0.1);
+}
+
+.term-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--term-primary),
+    transparent
+  );
+  opacity: 0.4;
+  transition: opacity 0.2s ease-out;
+}
+
+.term-card:hover::before {
+  opacity: 0.6;
+}
+
+/* Terminal Button */
+.term-btn {
+  background: transparent;
+  border: 1px solid var(--term-primary);
+  color: var(--term-primary);
+  padding: 0.5rem 1.5rem;
+  font-family: var(--font-terminal);
+  font-size: 1rem;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s ease-out;
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.term-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--term-primary);
+  opacity: 0;
+  transition: opacity 0.2s ease-out;
+}
+
+.term-btn:hover {
+  background: var(--term-primary);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 168, 107, 0.25);
+  transform: translateY(-1px);
+}
+
+.term-btn:hover::before {
+  opacity: 1;
+}
+
+.term-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 168, 107, 0.2);
+}
+
+.term-btn:focus-visible {
+  outline: 2px solid var(--term-primary);
+  outline-offset: 2px;
+}
+
+.term-btn span {
+  position: relative;
+  z-index: 1;
+}
+
+/* Terminal Input */
+.term-input,
+.term-select {
+  background: #ffffff;
+  border: 1px solid var(--term-border-light);
+  color: var(--term-text);
+  padding: 0.75rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  width: 100%;
+  transition: all 0.15s ease;
+}
+
+.term-input:focus,
+.term-select:focus {
+  outline: none;
+  border-color: var(--term-primary);
+  box-shadow: 0 0 0 3px var(--term-primary-dim);
+}
+
+/* Terminal Badge */
+.term-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  font-family: var(--font-terminal);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  background: var(--term-bg);
+  border: 1px solid var(--term-border-light);
+  color: var(--term-text-dim);
+  transition: border-color 0.15s ease-out, color 0.15s ease-out, background-color 0.15s ease-out;
+  cursor: default;
+}
+
+.term-badge:hover {
+  border-color: var(--term-primary);
+  color: var(--term-primary);
+  background-color: rgba(0, 168, 107, 0.05);
+}
+
+.term-badge.primary {
+  border-color: var(--term-primary);
+  color: var(--term-primary);
+  background: var(--term-primary-dim);
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+/* Fade in with slide */
+.fade-in-up {
+  animation: fadeInUp 0.4s ease-out forwards;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Scale in effect */
+.scale-in {
+  animation: scaleIn 0.3s ease-out forwards;
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Staggered children animation */
+.stagger-in > * {
+  opacity: 0;
+  animation: fadeInUp 0.3s ease-out forwards;
+}
+
+.stagger-in > *:nth-child(1) { animation-delay: 0s; }
+.stagger-in > *:nth-child(2) { animation-delay: 0.05s; }
+.stagger-in > *:nth-child(3) { animation-delay: 0.1s; }
+.stagger-in > *:nth-child(4) { animation-delay: 0.15s; }
+.stagger-in > *:nth-child(5) { animation-delay: 0.2s; }
+.stagger-in > *:nth-child(6) { animation-delay: 0.25s; }
+
+/* Pulse animation */
+.pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* ============================================
+   ACCESSIBILITY - REDUCED MOTION
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .term-cursor,
+  .animate-pulse {
+    animation: none;
+  }
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+.text-term-primary {
+  color: var(--term-primary);
+}
+
+.text-term-secondary {
+  color: var(--term-secondary);
+}
+
+.text-term-accent {
+  color: var(--term-accent);
+}
+
+.text-term-dim {
+  color: var(--term-text-dim);
+}
+
+.bg-term-primary {
+  background: var(--term-primary);
+}
+
+.border-term-primary {
+  border-color: var(--term-primary);
+}
+
+/* Line clamp utilities */
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ============================================
+   CUSTOM CURSOR
+   ============================================ */
+
+.term-cursor-custom {
+  cursor: crosshair;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+  :root {
+    --content-padding: 1rem;
+  }
 }
