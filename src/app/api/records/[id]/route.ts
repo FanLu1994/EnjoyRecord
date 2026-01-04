@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { deleteRecord, updateRecord } from "@/lib/db";
 import type { Progress, ProgressUnit, RecordStatus } from "@/lib/data";
 import { logError } from "@/lib/logger";
+import { requireAdminPassword } from "@/lib/admin-auth-server";
 
 export const runtime = "nodejs";
 
@@ -18,11 +19,19 @@ export async function PATCH(
 ) {
   const resolvedParams = await Promise.resolve(params);
   const id = resolvedParams.id;
+  const auth = requireAdminPassword(request);
+  if (!auth.ok) {
+    return NextResponse.json(
+      { error: auth.error },
+      { status: auth.status }
+    );
+  }
   const body = (await request.json()) as {
     status?: RecordStatus;
     progress?: { current: number; total?: number; unit: ProgressUnit };
     note?: string;
     rating?: number | null;
+    notes?: string;
   };
 
   if (!id) {
@@ -68,8 +77,12 @@ export async function PATCH(
     }
   }
 
-  if (!body.status && !progress && !body.note && body.rating === undefined) {
+  if (!body.status && !progress && !body.note && body.rating === undefined && !body.notes) {
     return NextResponse.json({ error: "No updates provided." }, { status: 400 });
+  }
+
+  if (body.notes && body.notes.trim().length > 200) {
+    return NextResponse.json({ error: "评价不能超过 200 字" }, { status: 400 });
   }
 
   try {
@@ -78,6 +91,7 @@ export async function PATCH(
       progress,
       historyNote: body.note,
       rating,
+      notes: body.notes?.trim() || undefined,
     });
 
     if (!updated) {
@@ -99,6 +113,13 @@ export async function DELETE(
   const id = resolvedParams.id;
   if (!id) {
     return NextResponse.json({ error: "Missing record id." }, { status: 400 });
+  }
+  const auth = requireAdminPassword(_request);
+  if (!auth.ok) {
+    return NextResponse.json(
+      { error: auth.error },
+      { status: auth.status }
+    );
   }
 
   try {

@@ -6,6 +6,7 @@ import type { RecordStatus } from "@/lib/data";
 import { statusLabels } from "@/lib/labels";
 import { Card, CardContent } from "@/components/ui/card";
 import StarRating from "@/components/star-rating";
+import { useAdminFetch } from "@/components/admin-auth-provider";
 
 const STATUS_OPTIONS: RecordStatus[] = [
   "planned",
@@ -18,17 +19,21 @@ export default function ItemProgressUpdate({
   id,
   status,
   rating,
+  notes,
 }: {
   id: string;
   status: RecordStatus;
   rating?: number;
+  notes?: string;
 }) {
   const router = useRouter();
+  const adminFetch = useAdminFetch();
   const [nextStatus, setNextStatus] = useState<RecordStatus>(status);
   const [ratingValue, setRatingValue] = useState<number | null>(
     rating === undefined ? null : rating
   );
   const [note, setNote] = useState("");
+  const [review, setReview] = useState(notes ?? "");
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,20 +41,22 @@ export default function ItemProgressUpdate({
     setError(null);
 
     const ratingChanged = ratingValue !== (rating ?? null);
-    if (nextStatus === status && !note.trim() && !ratingChanged) {
+    const reviewChanged = review.trim() !== (notes ?? "");
+    if (nextStatus === status && !note.trim() && !ratingChanged && !reviewChanged) {
       setError("No changes to update.");
       return;
     }
 
     setIsSaving(true);
     try {
-      const response = await fetch(`/api/records/${id}`, {
+      const response = await adminFetch(`/api/records/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           status: nextStatus,
           rating: ratingValue === null ? null : ratingValue,
           note: note.trim() || undefined,
+          notes: review.trim() || undefined,
         }),
       });
 
@@ -118,6 +125,20 @@ export default function ItemProgressUpdate({
               placeholder="Optional note for history"
               className="term-input"
             />
+          </div>
+          <div className="grid gap-2">
+            <label className="text-xs text-[#8a837b]">评价</label>
+            <textarea
+              value={review}
+              onChange={(event) => setReview(event.target.value)}
+              placeholder="最多 200 字"
+              maxLength={200}
+              rows={3}
+              className="term-input resize-none"
+            />
+            <div className="text-[10px] text-[#9a958f] font-[var(--font-mono)]">
+              {review.length}/200
+            </div>
           </div>
         </div>
         {error ? (

@@ -2,11 +2,16 @@
 
 import { useState, useEffect } from "react";
 import { getNeoDBConfig, saveNeoDBConfig, type NeoDBConfig } from "@/lib/neodb-config";
+import { useAdminFetch } from "@/components/admin-auth-provider";
 
 export default function SettingsPage() {
   const [config, setConfig] = useState<NeoDBConfig>(getNeoDBConfig());
   const [token, setToken] = useState(config.token || "");
   const [saved, setSaved] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [syncResult, setSyncResult] = useState<{ imported: number; skipped: number } | null>(null);
+  const adminFetch = useAdminFetch();
 
   useEffect(() => {
     const currentConfig = getNeoDBConfig();
@@ -14,14 +19,61 @@ export default function SettingsPage() {
     setToken(currentConfig.token || "");
   }, []);
 
-  const handleSave = () => {
+  const runSync = async (neoToken: string) => {
+    setSyncError(null);
+    setSyncResult(null);
+    if (!neoToken) return;
+
+    setSyncing(true);
+    try {
+      const response = await adminFetch("/api/neodb/import", {
+        method: "POST",
+        headers: {
+          "x-neodb-token": neoToken,
+        },
+      });
+      const data = (await response.json()) as {
+        imported?: number;
+        skipped?: number;
+        error?: string;
+      };
+      if (!response.ok) {
+        throw new Error(data?.error || "NeoDB 同步失败");
+      }
+      setSyncResult({
+        imported: data.imported ?? 0,
+        skipped: data.skipped ?? 0,
+      });
+    } catch (error) {
+      setSyncError(error instanceof Error ? error.message : "NeoDB 同步失败");
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const handleSave = async () => {
+    const trimmedToken = token.trim();
+    try {
+      const verify = await adminFetch("/api/admin/verify", { method: "POST" });
+      const data = await verify.json().catch(() => ({}));
+      if (!verify.ok) {
+        throw new Error(data.error || "需要管理员密码");
+      }
+    } catch (error) {
+      setSyncError(error instanceof Error ? error.message : "需要管理员密码");
+      return;
+    }
+
     const newConfig: NeoDBConfig = {
-      token: token.trim(),
+      token: trimmedToken,
     };
     saveNeoDBConfig(newConfig);
     setConfig(newConfig);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+
+    if (!trimmedToken) return;
+    await runSync(trimmedToken);
   };
 
   return (
@@ -56,6 +108,7 @@ export default function SettingsPage() {
                 type="password"
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
+                onCopy={(e) => e.preventDefault()}
                 placeholder="your_token_here"
                 className="term-input font-[var(--font-mono)] text-sm"
               />
@@ -69,8 +122,24 @@ export default function SettingsPage() {
               onClick={handleSave}
               className="term-btn w-full glitch-hover"
             >
-              <span>{saved ? "[✓] SAVED" : "[>] SAVE_CONFIG"}</span>
+              <span>{syncing ? "[~] SYNCING_NEODB" : saved ? "[✓] SAVED" : "[>] SAVE_CONFIG"}</span>
             </button>
+            <button
+              onClick={() => runSync(token.trim())}
+              disabled={!token.trim() || syncing}
+              className="term-btn w-full glitch-hover disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span>{syncing ? "[~] SYNCING_NEODB" : "[>] SYNC_NEODB_NOW"}</span>
+            </button>
+            {syncError ? (
+              <p className="text-[10px] text-[#d48806] font-[var(--font-mono)]">
+                ! {syncError}
+              </p>
+            ) : syncResult ? (
+              <p className="text-[10px] text-[#00a86b] font-[var(--font-mono)]">
+                + imported {syncResult.imported}, skipped {syncResult.skipped}
+              </p>
+            ) : null}
           </div>
         </div>
 

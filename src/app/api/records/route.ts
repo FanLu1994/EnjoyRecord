@@ -3,6 +3,7 @@ import { createRecord, getAllRecords } from "@/lib/db";
 import type { MediaType, ProgressUnit, RecordStatus } from "@/lib/data";
 import { syncToNeoDB } from "@/lib/providers/neodb-sync";
 import { logError } from "@/lib/logger";
+import { requireAdminPassword } from "@/lib/admin-auth-server";
 
 export const runtime = "nodejs";
 
@@ -12,6 +13,14 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const auth = requireAdminPassword(request);
+  if (!auth.ok) {
+    return NextResponse.json(
+      { error: auth.error },
+      { status: auth.status }
+    );
+  }
+
   const body = (await request.json()) as {
     type: MediaType;
     title: string;
@@ -36,10 +45,20 @@ export async function POST(request: Request) {
     );
   }
 
+  if (body.notes && body.notes.trim().length > 200) {
+    return NextResponse.json(
+      { error: "评价不能超过 200 字" },
+      { status: 400 }
+    );
+  }
+
   try {
     // Create local record first
     const { startedAt, completedAt, ...rest } = body;
-    const record = createRecord(rest);
+    const record = createRecord({
+      ...rest,
+      notes: rest.notes?.trim() || undefined,
+    });
 
     // Sync to NeoDB if we have a neodb ID and token
     const neodbId = body.sourceIds?.neodb;

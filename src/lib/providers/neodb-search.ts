@@ -3,6 +3,8 @@
 
 import type { MediaType } from "@/lib/data";
 import { logError, logInfo } from "@/lib/logger";
+import { isNeoDBTimeout } from "@/lib/neodb-timeout";
+import { neodbFetch } from "@/lib/neodb-fetch";
 
 export interface SearchItem {
   sources: string[];
@@ -72,7 +74,7 @@ export const searchNeoDB = async (
       headers["Authorization"] = `Bearer ${token.trim()}`;
     }
 
-    const response = await fetch(searchUrl.toString(), { headers });
+    const response = await neodbFetch(searchUrl.toString(), { headers });
 
     if (!response.ok) {
       if (response.status === 401) {
@@ -95,6 +97,9 @@ export const searchNeoDB = async (
     return items;
   } catch (error) {
     logError("neodb search failed", { query, type, error });
+    if (isNeoDBTimeout(error)) {
+      throw new Error("NeoDB API 请求超时，请稍后重试");
+    }
     if (error instanceof Error) {
       throw error;
     }
@@ -153,7 +158,7 @@ export const getNeoDBItem = async (
       headers["Authorization"] = `Bearer ${token.trim()}`;
     }
 
-    const response = await fetch(itemUrl, { headers });
+    const response = await neodbFetch(itemUrl, { headers });
 
     if (!response.ok) {
       throw new Error(`NeoDB API error: ${response.status}`);

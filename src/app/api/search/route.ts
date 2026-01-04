@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import type { MediaType } from "@/lib/data";
 import { searchNeoDB, basicSearch } from "@/lib/providers/neodb-search";
 import { logError } from "@/lib/logger";
+import { requireAdminPassword } from "@/lib/admin-auth-server";
+import { isNeoDBTimeout } from "@/lib/neodb-timeout";
 
 export const runtime = "nodejs";
 
@@ -13,6 +15,13 @@ const formatCause = (error: unknown) => {
 };
 
 export async function GET(request: Request) {
+  const auth = requireAdminPassword(request);
+  if (!auth.ok) {
+    return NextResponse.json(
+      { error: auth.error },
+      { status: auth.status }
+    );
+  }
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("q")?.trim();
   const type = searchParams.get("type") as MediaType | null;
@@ -43,6 +52,13 @@ export async function GET(request: Request) {
       error: message,
       detail: detail || undefined,
     });
+
+    if (isNeoDBTimeout(error) || message.includes("超时")) {
+      return NextResponse.json(
+        { error: "NeoDB API 请求超时，请稍后重试" },
+        { status: 504 }
+      );
+    }
 
     if (message.includes("Token") || message.includes("401")) {
       return NextResponse.json(

@@ -25,6 +25,9 @@ A personal media tracking application for recording books, films, series, and ga
 # Install dependencies
 npm install
 
+# Configure environment variables
+cp .env.example .env.local
+
 # Run development server
 npm run dev
 
@@ -36,6 +39,10 @@ npm start
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## Environment Variables
+
+- `ENJOYRECORD_ADMIN_PASSWORD`: Optional admin password for protected actions (sync, create, update, delete).
 
 ## Project Structure
 

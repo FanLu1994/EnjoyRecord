@@ -6,6 +6,7 @@ import type { RecordStatus } from "@/lib/data";
 import { statusLabels } from "@/lib/labels";
 import { getNeoDBToken } from "@/lib/neodb-config";
 import StarRating from "@/components/star-rating";
+import { useAdminFetch } from "@/components/admin-auth-provider";
 
 interface SearchItem {
   sources: string[];
@@ -22,6 +23,7 @@ const statusOptions: RecordStatus[] = ["planned", "in_progress", "completed", "p
 
 export default function NewRecordPage() {
   const router = useRouter();
+  const adminFetch = useAdminFetch();
   const [searchResults, setSearchResults] = useState<SearchItem[]>([]);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [searching, setSearching] = useState(false);
@@ -32,6 +34,7 @@ export default function NewRecordPage() {
     title: "",
     status: "planned" as RecordStatus,
     rating: 0,
+    notes: "",
   });
 
   const payloadFromResult = (item: SearchItem) => ({
@@ -44,6 +47,7 @@ export default function NewRecordPage() {
     status: form.status,
     rating: form.rating > 0 ? form.rating : undefined,
     sourceIds: item.sourceIds,
+    notes: form.notes.trim() || undefined,
   });
 
   const handleSearch = async () => {
@@ -54,7 +58,7 @@ export default function NewRecordPage() {
 
     try {
       const token = getNeoDBToken();
-      const response = await fetch(
+      const response = await adminFetch(
         `/api/search?q=${encodeURIComponent(form.title)}&token=${encodeURIComponent(token)}`
       );
       if (!response.ok) {
@@ -87,7 +91,7 @@ export default function NewRecordPage() {
     setSearchError(null);
     try {
       const token = getNeoDBToken();
-      const response = await fetch("/api/records", {
+      const response = await adminFetch("/api/records", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -138,30 +142,36 @@ export default function NewRecordPage() {
             SEARCH_QUERY
           </h2>
 
-          <div className="flex gap-2">
+          <form
+            className="flex gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSearch();
+            }}
+          >
             {/* Search Input */}
             <input
               value={form.title}
               onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  handleSearch();
-                }
-              }}
               placeholder="搜索书名、电影、剧集、游戏..."
               className="term-input flex-1"
             />
 
             {/* Search Button */}
             <button
-              onClick={handleSearch}
+              type="submit"
               disabled={searching || !form.title.trim()}
               className="term-btn shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span>{searching ? "..." : ">>"}</span>
             </button>
-          </div>
+          </form>
+
+          {searching && (
+            <div className="mt-3 text-xs font-[var(--font-mono)] text-[#6b6560]">
+              ... 正在搜索 NeoDB
+            </div>
+          )}
 
           {/* Error Message */}
           {searchError && (
@@ -284,6 +294,23 @@ export default function NewRecordPage() {
                 value={form.rating}
                 onChange={(value) => setForm((prev) => ({ ...prev, rating: value }))}
               />
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <label className="block text-xs text-[#6b6560] mb-2 font-[var(--font-mono)]">
+              review=
+            </label>
+            <textarea
+              value={form.notes}
+              onChange={(e) => setForm((prev) => ({ ...prev, notes: e.target.value }))}
+              placeholder="写一句评价（最多 200 字）"
+              maxLength={200}
+              rows={3}
+              className="term-input w-full resize-none"
+            />
+            <div className="mt-1 text-[10px] text-[#9a958f] font-[var(--font-mono)]">
+              {form.notes.length}/200
             </div>
           </div>
 

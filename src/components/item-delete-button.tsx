@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAdminFetch } from "@/components/admin-auth-provider";
 
 export default function ItemDeleteButton({ id }: { id: string }) {
   const router = useRouter();
+  const adminFetch = useAdminFetch();
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
@@ -17,7 +19,7 @@ export default function ItemDeleteButton({ id }: { id: string }) {
     }
     setIsDeleting(true);
     try {
-      const response = await fetch(`/api/records/${id}`, {
+      const response = await adminFetch(`/api/records/${id}`, {
         method: "DELETE",
       });
       if (!response.ok) {

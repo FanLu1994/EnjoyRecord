@@ -62,6 +62,14 @@ export default async function ItemDetailPage({
                   ) : null}
                 </div>
                 <p className="text-sm text-[#5d564f]">{item.summary}</p>
+                {item.notes ? (
+                  <div className="rounded-2xl border border-black/5 bg-white/70 px-4 py-3 text-sm text-[#5d564f]">
+                    <div className="text-[10px] uppercase tracking-wide text-[#8a837b]">
+                      评价
+                    </div>
+                    <p className="mt-2 whitespace-pre-wrap">{item.notes}</p>
+                  </div>
+                ) : null}
                 <div className="flex flex-wrap gap-2 text-xs">
                   {item.tags.map((tag) => (
                     <Badge
@@ -82,6 +90,7 @@ export default async function ItemDetailPage({
             id={item.id}
             status={item.status}
             rating={item.rating}
+            notes={item.notes}
           />
           <ItemDeleteButton id={item.id} />
         </div>
@@ -116,4 +125,3 @@ export default async function ItemDetailPage({
     </div>
   );
 }
-

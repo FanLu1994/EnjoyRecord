@@ -3,6 +3,7 @@
 
 import type { MediaType } from "@/lib/data";
 import { logError, logInfo } from "@/lib/logger";
+import { neodbFetch } from "@/lib/neodb-fetch";
 
 export interface SyncItem {
   type: MediaType;
@@ -101,7 +102,7 @@ const upsertShelfItem = async (
     body.rating_grade = normalizeRatingGrade(item.rating);
   }
 
-  const response = await fetch(`${NEODB_API_BASE}/me/shelf/item/${itemUuid}`, {
+  const response = await neodbFetch(`${NEODB_API_BASE}/me/shelf/item/${itemUuid}`, {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${token.trim()}`,
