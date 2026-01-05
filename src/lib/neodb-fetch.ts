@@ -1,4 +1,4 @@
-const DEFAULT_TIMEOUT_MS = 5000;
+const DEFAULT_TIMEOUT_MS = 30000; // Increased from 5000 to 30000ms
 
 export const neodbFetch = async (
   input: RequestInfo | URL,

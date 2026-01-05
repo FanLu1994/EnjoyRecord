@@ -10,7 +10,8 @@
       "Skill(ui-ux-pro-max)",
       "Bash(python3 .claude/skills/ui-ux-pro-max/scripts/search.py:*)",
       "Bash(python .claude/skills/ui-ux-pro-max/scripts/search.py:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(curl:*)"
     ]
   }
 }

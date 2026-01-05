@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { JetBrains_Mono, VT323 } from "next/font/google";
 import TerminalSidebar from "@/components/terminal-sidebar";
+import ConfigChecker from "@/components/config-checker";
 import "./globals.css";
 
 const jetbrainsMono = JetBrains_Mono({
@@ -34,6 +35,7 @@ export default function RootLayout({
           fontFamily: 'var(--font-mono)',
         }}
       >
+        <ConfigChecker />
         <TerminalSidebar>{children}</TerminalSidebar>
       </body>
     </html>

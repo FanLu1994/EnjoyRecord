@@ -22,6 +22,7 @@ export async function GET(request: Request) {
       { status: auth.status }
     );
   }
+
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("q")?.trim();
   const type = searchParams.get("type") as MediaType | null;

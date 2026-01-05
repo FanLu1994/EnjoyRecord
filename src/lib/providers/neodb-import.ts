@@ -123,12 +123,16 @@ const fetchShelfPage = async (
   url.searchParams.set("page", String(page));
   url.searchParams.set("page_size", String(PAGE_SIZE));
 
-  const response = await neodbFetch(url.toString(), {
-    headers: {
-      "Accept": "application/json",
-      "Authorization": `Bearer ${token.trim()}`,
+  const response = await neodbFetch(
+    url.toString(),
+    {
+      headers: {
+        "Accept": "application/json",
+        "Authorization": `Bearer ${token.trim()}`,
+      },
     },
-  });
+    30000 // 30 second timeout for import operations
+  );
 
   if (!response.ok) {
     if (response.status === 401) {

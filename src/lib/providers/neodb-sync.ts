@@ -90,6 +90,7 @@ const upsertShelfItem = async (
   token: string
 ): Promise<void> => {
   const body: Record<string, unknown> = {
+    item_uuid: itemUuid,
     shelf_type: shelfType,
     visibility: 0,
   };
@@ -102,15 +103,21 @@ const upsertShelfItem = async (
     body.rating_grade = normalizeRatingGrade(item.rating);
   }
 
-  const response = await neodbFetch(`${NEODB_API_BASE}/me/shelf/item/${itemUuid}`, {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${token.trim()}`,
-      "Content-Type": "application/json",
-      "Accept": "application/json",
+  // Use neodbFetch with longer timeout for sync operations
+  // The correct endpoint is POST /api/me/shelf with item_uuid in body
+  const response = await neodbFetch(
+    `${NEODB_API_BASE}/me/shelf`,
+    {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${token.trim()}`,
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      body: JSON.stringify(body),
     },
-    body: JSON.stringify(body),
-  });
+    30000 // 30 second timeout for sync operations
+  );
 
   if (!response.ok) {
     let errorMessage = `NeoDB API error: ${response.status}`;
@@ -118,8 +125,20 @@ const upsertShelfItem = async (
       const error = await response.json();
       if (error?.message) {
         errorMessage = error.message;
+      } else if (error?.detail) {
+        errorMessage = error.detail;
+      } else if (error?.error) {
+        errorMessage = error.error;
       }
-    } catch {}
+    } catch {
+      // If JSON parsing fails, try to get text
+      try {
+        const text = await response.text();
+        if (text) {
+          errorMessage = `NeoDB API error: ${response.status} - ${text}`;
+        }
+      } catch {}
+    }
     throw new Error(errorMessage);
   }
 };
