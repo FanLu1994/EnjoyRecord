@@ -1,5 +1,6 @@
 "use client";
 
+import axios, { type AxiosRequestConfig } from "axios";
 import {
   createContext,
   useCallback,
@@ -13,17 +14,19 @@ import {
   clearAdminPassword,
   getStoredAdminPassword,
   storeAdminPassword,
+  createAdminFetchResponse,
+  type AdminFetchResponse,
 } from "@/lib/admin-auth-client";
 
 type AdminAuthContextValue = {
-  fetchWithAdmin: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+  fetchWithAdmin: (input: RequestInfo | URL, init?: RequestInit) => Promise<AdminFetchResponse>;
 };
 
 const AdminAuthContext = createContext<AdminAuthContextValue | null>(null);
 
-export const useAdminFetch = () => {
+export const useAdminFetch = (): ((input: RequestInfo | URL, init?: RequestInit) => Promise<AdminFetchResponse>) => {
   const context = useContext(AdminAuthContext);
-  return context?.fetchWithAdmin ?? fetch;
+  return context?.fetchWithAdmin ?? (async () => createAdminFetchResponse(200, {}));
 };
 
 export default function AdminAuthProvider({ children }: { children: React.ReactNode }) {
@@ -62,11 +65,38 @@ export default function AdminAuthProvider({ children }: { children: React.ReactN
 
   const fetchWithAdmin = useCallback(
     async (input: RequestInfo | URL, init?: RequestInit) => {
-      const attempt = async (value?: string) =>
-        fetch(input, {
-          ...init,
-          headers: buildAdminHeaders(init?.headers, value),
+      const url = typeof input === "string" ? input : input instanceof URL ? input.href : String(input);
+
+      const attempt = async (value?: string) => {
+        const headers = buildAdminHeaders(init?.headers, value);
+        const headerObj: Record<string, string> = {};
+        headers.forEach((value, key) => {
+          headerObj[key] = value;
         });
+
+        const config: AxiosRequestConfig = {
+          method: (init?.method as any) || "GET",
+          headers: headerObj,
+          timeout: 30000,
+        };
+
+        if (init?.body) {
+          config.data = init.body;
+        }
+
+        try {
+          const response = await axios(url, config);
+          return createAdminFetchResponse(response.status, response.data);
+        } catch (error) {
+          if (axios.isAxiosError(error)) {
+            return createAdminFetchResponse(
+              error.response?.status || 0,
+              error.response?.data || null
+            );
+          }
+          return createAdminFetchResponse(0, null);
+        }
+      };
 
       const stored = getStoredAdminPassword();
       if (stored) {

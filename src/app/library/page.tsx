@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
+import axios from "axios";
 import RecordCard from "@/components/record-card";
 import RecordRow from "@/components/record-row";
 import type { RecordItem, MediaType, RecordStatus } from "@/lib/data";
@@ -53,9 +54,8 @@ export default function LibraryPage() {
 
   useEffect(() => {
     const loadRecords = async () => {
-      const response = await fetch("/api/records");
-      const data = (await response.json()) as { records: RecordItem[] };
-      setRecords(data.records);
+      const response = await axios.get<{ records: RecordItem[] }>("/api/records");
+      setRecords(response.data.records);
     };
     loadRecords();
   }, []);
@@ -176,7 +176,7 @@ export default function LibraryPage() {
               排序
             </label>
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="rounded-2xl border-black/10 bg-white text-sm">
+              <SelectTrigger>
                 <SelectValue placeholder="排序" />
               </SelectTrigger>
               <SelectContent>

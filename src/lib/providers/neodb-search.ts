@@ -1,10 +1,10 @@
 // NeoDB API Search Provider
 // Uses NeoDB's catalog search API with token authentication
 
+import axios from "axios";
 import type { MediaType } from "@/lib/data";
 import { logError, logInfo } from "@/lib/logger";
 import { isNeoDBTimeout } from "@/lib/neodb-timeout";
-import { neodbFetch } from "@/lib/neodb-fetch";
 
 export interface SearchItem {
   sources: string[];
@@ -74,16 +74,12 @@ export const searchNeoDB = async (
       headers["Authorization"] = `Bearer ${token.trim()}`;
     }
 
-    const response = await neodbFetch(searchUrl.toString(), { headers });
+    const response = await axios.get(searchUrl.toString(), {
+      headers,
+      timeout: 30000,
+    });
 
-    if (!response.ok) {
-      if (response.status === 401) {
-        throw new Error("NeoDB API Token 无效，请检查设置");
-      }
-      throw new Error(`NeoDB API error: ${response.status}`);
-    }
-
-    const data = (await response.json()) as NeoDBSearchResponse;
+    const data = response.data as NeoDBSearchResponse;
 
     // Parse and transform results
     const items = parseNeoDBResponse(data, type);
@@ -99,6 +95,12 @@ export const searchNeoDB = async (
     logError("neodb search failed", { query, type, error });
     if (isNeoDBTimeout(error)) {
       throw new Error("NeoDB API 请求超时，请稍后重试");
+    }
+    if (axios.isAxiosError(error)) {
+      if (error.response?.status === 401) {
+        throw new Error("NeoDB API Token 无效，请检查设置");
+      }
+      throw new Error(`NeoDB API error: ${error.response?.status || 'unknown'}`);
     }
     if (error instanceof Error) {
       throw error;
@@ -158,13 +160,12 @@ export const getNeoDBItem = async (
       headers["Authorization"] = `Bearer ${token.trim()}`;
     }
 
-    const response = await neodbFetch(itemUrl, { headers });
+    const response = await axios.get(itemUrl, {
+      headers,
+      timeout: 30000,
+    });
 
-    if (!response.ok) {
-      throw new Error(`NeoDB API error: ${response.status}`);
-    }
-
-    const item = (await response.json()) as NeoDBItem;
+    const item = response.data as NeoDBItem;
 
     return {
       sources: ["neodb"],

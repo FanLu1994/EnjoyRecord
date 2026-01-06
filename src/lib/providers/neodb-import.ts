@@ -1,8 +1,8 @@
+import axios from "axios";
 import type { MediaType, RecordStatus } from "@/lib/data";
 import { createRecord, getAllRecords } from "@/lib/db";
 import { logError, logInfo } from "@/lib/logger";
 import { isNeoDBTimeout } from "@/lib/neodb-timeout";
-import { neodbFetch } from "@/lib/neodb-fetch";
 
 const NEODB_API_BASE = "https://neodb.social/api";
 
@@ -113,35 +113,22 @@ const mapShelfEntry = (
 
 const fetchShelfPage = async (
   token: string,
-  category: string,
   shelfType: string,
   page: number
 ): Promise<{ entries: ShelfEntry[]; hasNext: boolean }> => {
-  const url = new URL(`${NEODB_API_BASE}/me/shelf`);
-  url.searchParams.set("category", category);
-  url.searchParams.set("shelf_type", shelfType);
+  const url = new URL(`${NEODB_API_BASE}/me/shelf/${shelfType}`);
   url.searchParams.set("page", String(page));
   url.searchParams.set("page_size", String(PAGE_SIZE));
 
-  const response = await neodbFetch(
-    url.toString(),
-    {
-      headers: {
-        "Accept": "application/json",
-        "Authorization": `Bearer ${token.trim()}`,
-      },
+  const response = await axios.get(url.toString(), {
+    headers: {
+      "Accept": "application/json",
+      "Authorization": `Bearer ${token.trim()}`,
     },
-    30000 // 30 second timeout for import operations
-  );
+    timeout: 30000,
+  });
 
-  if (!response.ok) {
-    if (response.status === 401) {
-      throw new Error("NeoDB API Token 无效，请检查设置");
-    }
-    throw new Error(`NeoDB API error: ${response.status}`);
-  }
-
-  const payload = (await response.json()) as ShelfPayload;
+  const payload = response.data as ShelfPayload;
   const entries = (
     Array.isArray(payload.data)
       ? payload.data
@@ -167,48 +154,45 @@ export const importFromNeoDB = async (token: string) => {
   let total = 0;
 
   try {
-    for (const [category, fallbackType] of Object.entries(CATEGORY_TO_TYPE)) {
-      for (const shelf of SHELF_STATUS) {
-        let page = 1;
-        let hasNext = true;
-        while (hasNext) {
-          const { entries, hasNext: next } = await fetchShelfPage(
-            token,
-            category,
-            shelf.shelfType,
-            page
-          );
-          total += entries.length;
-          for (const entry of entries) {
-            const mapped = mapShelfEntry(entry, fallbackType, shelf.status);
-            if (!mapped) {
-              skipped += 1;
-              continue;
-            }
-            const key = normalizeKey(mapped.type, mapped.title);
-            if (existing.has(key)) {
-              skipped += 1;
-              continue;
-            }
-            createRecord({
-              type: mapped.type,
-              title: mapped.title,
-              originalTitle: mapped.originalTitle,
-              year: mapped.year,
-              summary: mapped.summary,
-              coverUrl: mapped.coverUrl,
-              status: mapped.status,
-              rating: mapped.rating,
-              notes: mapped.notes,
-            });
-            existing.add(key);
-            imported += 1;
+    for (const shelf of SHELF_STATUS) {
+      let page = 1;
+      let hasNext = true;
+      while (hasNext) {
+        const { entries, hasNext: next } = await fetchShelfPage(
+          token,
+          shelf.shelfType,
+          page
+        );
+        total += entries.length;
+        for (const entry of entries) {
+          const mapped = mapShelfEntry(entry, "book", shelf.status);
+          if (!mapped) {
+            skipped += 1;
+            continue;
           }
+          const key = normalizeKey(mapped.type, mapped.title);
+          if (existing.has(key)) {
+            skipped += 1;
+            continue;
+          }
+          createRecord({
+            type: mapped.type,
+            title: mapped.title,
+            originalTitle: mapped.originalTitle,
+            year: mapped.year,
+            summary: mapped.summary,
+            coverUrl: mapped.coverUrl,
+            status: mapped.status,
+            rating: mapped.rating,
+            notes: mapped.notes,
+          });
+          existing.add(key);
+          imported += 1;
+        }
           page += 1;
           hasNext = next;
         }
       }
-    }
   } catch (error) {
     await logError("neodb import failed", { error });
     if (isNeoDBTimeout(error)) {

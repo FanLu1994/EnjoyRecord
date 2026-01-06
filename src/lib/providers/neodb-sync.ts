@@ -1,9 +1,9 @@
 // NeoDB API Sync Module
 // Syncs records to NeoDB shelf
 
+import axios from "axios";
 import type { MediaType } from "@/lib/data";
 import { logError, logInfo } from "@/lib/logger";
-import { neodbFetch } from "@/lib/neodb-fetch";
 
 export interface SyncItem {
   type: MediaType;
@@ -103,44 +103,84 @@ const upsertShelfItem = async (
     body.rating_grade = normalizeRatingGrade(item.rating);
   }
 
-  // Use neodbFetch with longer timeout for sync operations
-  // The correct endpoint is POST /api/me/shelf with item_uuid in body
-  const response = await neodbFetch(
-    `${NEODB_API_BASE}/me/shelf`,
-    {
-      method: "POST",
+  // Use axios with longer timeout for sync operations
+  try {
+    await axios.post(`${NEODB_API_BASE}/me/shelf`, body, {
       headers: {
         "Authorization": `Bearer ${token.trim()}`,
         "Content-Type": "application/json",
         "Accept": "application/json",
       },
-      body: JSON.stringify(body),
-    },
-    30000 // 30 second timeout for sync operations
+      timeout: 30000, // 30 second timeout
+    });
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const errorMessage = error.response?.data?.message
+        || error.response?.data?.detail
+        || error.response?.data?.error
+        || `NeoDB API error: ${error.response?.status || 'unknown'}`;
+      throw new Error(errorMessage);
+    }
+    throw error;
+  }
+};
+
+/**
+ * Fetch shelf items from NeoDB by shelf type
+ * @param shelfType - The shelf type (progress/wishlist/complete/dropped)
+ * @param token - NeoDB API token
+ * @param page - Page number (default: 1)
+ */
+export const fetchNeoDBShelf = async (
+  shelfType: "progress" | "wishlist" | "complete" | "dropped",
+  token: string,
+  page: number = 1
+): Promise<unknown[] | null> => {
+  try {
+    const url = `${NEODB_API_BASE}/me/shelf/${shelfType}?page=${page}`;
+
+    const response = await axios.get(url, {
+      headers: {
+        "Authorization": `Bearer ${token.trim()}`,
+        "Accept": "application/json",
+      },
+      timeout: 30000,
+    });
+
+    return response.data.data || response.data.items || [];
+  } catch (error) {
+    logError("neodb fetch shelf error", { shelfType, error });
+    return null;
+  }
+};
+
+/**
+ * Fetch all shelf items from NeoDB (all four types)
+ * @param token - NeoDB API token
+ */
+export const fetchAllNeoDBShelves = async (
+  token: string
+): Promise<{
+  progress: unknown[];
+  wishlist: unknown[];
+  complete: unknown[];
+  dropped: unknown[];
+}> => {
+  const shelfTypes = ["progress", "wishlist", "complete", "dropped"] as const;
+
+  const results = await Promise.all(
+    shelfTypes.map(async (type) => {
+      const items = await fetchNeoDBShelf(type, token);
+      return { type, items: items || [] };
+    })
   );
 
-  if (!response.ok) {
-    let errorMessage = `NeoDB API error: ${response.status}`;
-    try {
-      const error = await response.json();
-      if (error?.message) {
-        errorMessage = error.message;
-      } else if (error?.detail) {
-        errorMessage = error.detail;
-      } else if (error?.error) {
-        errorMessage = error.error;
-      }
-    } catch {
-      // If JSON parsing fails, try to get text
-      try {
-        const text = await response.text();
-        if (text) {
-          errorMessage = `NeoDB API error: ${response.status} - ${text}`;
-        }
-      } catch {}
-    }
-    throw new Error(errorMessage);
-  }
+  return {
+    progress: results.find((r) => r.type === "progress")?.items || [],
+    wishlist: results.find((r) => r.type === "wishlist")?.items || [],
+    complete: results.find((r) => r.type === "complete")?.items || [],
+    dropped: results.find((r) => r.type === "dropped")?.items || [],
+  };
 };
 
 /**
@@ -158,18 +198,19 @@ export const searchNeoDBItem = async (
       query
     )}&category=${category}`;
 
-    const response = await fetch(searchUrl, {
-      headers: {
-        "Accept": "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      return null;
+    const headers: Record<string, string> = {
+      "Accept": "application/json",
+    };
+    if (token?.trim()) {
+      headers["Authorization"] = `Bearer ${token.trim()}`;
     }
 
-    const data = await response.json();
-    const items = data.data || [];
+    const response = await axios.get(searchUrl, {
+      headers,
+      timeout: 30000,
+    });
+
+    const items = response.data.data || [];
 
     if (items.length > 0) {
       const item = items[0];

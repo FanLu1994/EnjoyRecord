@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import axios from "axios";
 
 export default function ConfigChecker() {
   const router = useRouter();
@@ -15,10 +16,8 @@ export default function ConfigChecker() {
       }
 
       try {
-        const response = await fetch("/api/admin/check");
-        const data = (await response.json()) as { configured: boolean };
-
-        if (!data.configured) {
+        const response = await axios.get<{ configured: boolean }>("/api/admin/check");
+        if (!response.data.configured) {
           router.replace("/admin-not-configured");
         }
       } catch (error) {

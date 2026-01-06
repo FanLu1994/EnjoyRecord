@@ -1,3 +1,4 @@
+import axios from "axios";
 import type { MediaType } from "@/lib/data";
 import { pinyin } from "pinyin-pro";
 import { logError, logInfo, logWarn } from "@/lib/logger";
@@ -43,20 +44,12 @@ const fetchWithLog = async (provider: string, url: string) => {
   const safeUrl = redactUrl(url);
   logInfo("provider request", { provider, url: safeUrl });
   try {
-    const response = await fetch(url, { cache: "no-store" });
-    if (!response.ok) {
-      logWarn("provider response", {
-        provider,
-        url: safeUrl,
-        status: response.status,
-      });
-    } else {
-      logInfo("provider response", {
-        provider,
-        url: safeUrl,
-        status: response.status,
-      });
-    }
+    const response = await axios.get(url, { timeout: 30000 });
+    logInfo("provider response", {
+      provider,
+      url: safeUrl,
+      status: response.status,
+    });
     return response;
   } catch (error) {
     logError("provider fetch failed", {
@@ -105,10 +98,7 @@ const searchOpenLibrary = async (query: string): Promise<SearchItem[]> => {
     toPinyinQuery(query)
   )}`;
   const response = await fetchWithLog("openlibrary", url);
-  if (!response.ok) {
-    throw new Error("Open Library 请求失败");
-  }
-  const data = (await response.json()) as {
+  const data = response.data as {
     docs: Array<{
       key: string;
       title: string;
@@ -140,10 +130,7 @@ const searchGoogleBooks = async (query: string): Promise<SearchItem[]> => {
     query
   )}&maxResults=3&langRestrict=zh`;
   const response = await fetchWithLog("googlebooks", url);
-  if (!response.ok) {
-    throw new Error("Google Books 请求失败");
-  }
-  const data = (await response.json()) as {
+  const data = response.data as {
     items?: Array<{
       id: string;
       volumeInfo: {
@@ -190,10 +177,7 @@ const searchTmdb = async (
     query
   )}&language=zh-CN&api_key=${apiKey}`;
   const response = await fetchWithLog("tmdb", url);
-  if (!response.ok) {
-    throw new Error("TMDB 请求失败");
-  }
-  const data = (await response.json()) as {
+  const data = response.data as {
     results: Array<{
       id: number;
       title?: string;
@@ -233,10 +217,7 @@ const searchOmdb = async (
     query
   )}&type=${kind}`;
   const response = await fetchWithLog("omdb", url);
-  if (!response.ok) {
-    throw new Error("OMDb 请求失败");
-  }
-  const data = (await response.json()) as {
+  const data = response.data as {
     Search?: Array<{
       Title: string;
       Year: string;
@@ -270,10 +251,7 @@ const searchRawg = async (query: string): Promise<SearchItem[]> => {
     query
   )}&page_size=3&key=${apiKey}`;
   const response = await fetchWithLog("rawg", url);
-  if (!response.ok) {
-    throw new Error("RAWG 请求失败");
-  }
-  const data = (await response.json()) as {
+  const data = response.data as {
     results: Array<{
       id: number;
       name: string;
@@ -304,10 +282,7 @@ const searchRawgPopular = async (): Promise<SearchItem[]> => {
   }
   const url = `https://api.rawg.io/api/games?ordering=-added&page_size=3&key=${apiKey}`;
   const response = await fetchWithLog("rawg", url);
-  if (!response.ok) {
-    throw new Error("RAWG request failed");
-  }
-  const data = (await response.json()) as {
+  const data = response.data as {
     results: Array<{
       id: number;
       name: string;
@@ -335,10 +310,7 @@ const searchSteam = async (query: string): Promise<SearchItem[]> => {
     query
   )}&l=schinese&cc=cn`;
   const response = await fetchWithLog("steam", url);
-  if (!response.ok) {
-    throw new Error("Steam 请求失败");
-  }
-  const data = (await response.json()) as {
+  const data = response.data as {
     items?: Array<{
       id: number;
       name: string;

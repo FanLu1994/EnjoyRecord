@@ -48,3 +48,20 @@ export const buildAdminHeaders = (init?: HeadersInit, password?: string) => {
   }
   return headers;
 };
+
+export interface AdminFetchResponse {
+  ok: boolean;
+  status: number;
+  json(): Promise<any>;
+}
+
+export function createAdminFetchResponse(
+  status: number,
+  data: any
+): AdminFetchResponse {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    json: () => Promise.resolve(data),
+  };
+}
