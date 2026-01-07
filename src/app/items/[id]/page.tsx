@@ -1,8 +1,7 @@
 import { notFound } from "next/navigation";
 import ItemProgressUpdate from "@/components/item-progress-update";
-import ItemDeleteButton from "@/components/item-delete-button";
 import { getRecordById } from "@/lib/db";
-import { formatDate, formatProgress, formatRating } from "@/lib/format";
+import { formatDate, formatProgress } from "@/lib/format";
 import {
   statusBadgeClass,
   statusLabels,
@@ -24,8 +23,8 @@ export default async function ItemDetailPage({
   if (!item) return notFound();
 
   return (
-    <div className="space-y-10">
-      <section className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+    <div className="max-w-4xl mx-auto space-y-10">
+      <section>
         <Card className="rounded-3xl border-black/5 bg-white/80 shadow-sm">
           <CardContent className="p-6">
             <div className="flex flex-wrap items-center gap-2 text-xs">
@@ -43,16 +42,16 @@ export default async function ItemDetailPage({
               </Badge>
               <span className="text-[#8a837b]">{item.year}</span>
             </div>
-            <div className="mt-4 flex flex-wrap items-start gap-6">
+            <div className="mt-6 flex flex-col sm:flex-row gap-6">
               <div
-                className="h-40 w-28 overflow-hidden rounded-3xl border border-black/10 shadow-inner"
+                className="h-56 w-40 overflow-hidden rounded-3xl border border-black/10 shadow-inner mx-auto sm:mx-0"
                 style={{
                   background: item.coverUrl
                     ? `url(${item.coverUrl}) center / cover no-repeat`
                     : `linear-gradient(135deg, ${item.cover.tone}, ${item.cover.accent})`,
                 }}
               />
-              <div className="flex-1 space-y-3">
+              <div className="flex-1 space-y-4">
                 <div>
                   <h1 className="text-3xl font-semibold">{item.title}</h1>
                   {item.originalTitle ? (
@@ -62,14 +61,12 @@ export default async function ItemDetailPage({
                   ) : null}
                 </div>
                 <p className="text-sm text-[#5d564f]">{item.summary}</p>
-                {item.notes ? (
-                  <div className="rounded-2xl border border-black/5 bg-white/70 px-4 py-3 text-sm text-[#5d564f]">
-                    <div className="text-[10px] uppercase tracking-wide text-[#8a837b]">
-                      评价
-                    </div>
-                    <p className="mt-2 whitespace-pre-wrap">{item.notes}</p>
+                {item.rating && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-[#d48806]">★</span>
+                    <span className="font-medium">{item.rating}/10</span>
                   </div>
-                ) : null}
+                )}
                 <div className="flex flex-wrap gap-2 text-xs">
                   {item.tags.map((tag) => (
                     <Badge
@@ -85,43 +82,46 @@ export default async function ItemDetailPage({
             </div>
           </CardContent>
         </Card>
-        <div className="space-y-4">
-          <ItemProgressUpdate
-            id={item.id}
-            status={item.status}
-            rating={item.rating}
-            notes={item.notes}
-          />
-          <ItemDeleteButton id={item.id} />
-        </div>
       </section>
 
-      <Card className="rounded-3xl border-black/5 bg-white/80 shadow-sm">
-        <CardContent className="p-6">
-          <div className="text-xs uppercase tracking-wide text-[#8a837b]">
-            历史变更
-          </div>
-          <div className="mt-4 space-y-4">
-            {item.history.map((entry, index) => (
-              <Card
-                key={`${entry.date}-${index}`}
-                className="rounded-2xl border-black/5 bg-white"
-              >
-                <CardContent className="flex flex-wrap items-center gap-4 px-4 py-3 text-sm text-[#6f6a63]">
-                  <Badge className="rounded-full px-3 py-1 text-xs">
-                    {formatDate(entry.date)}
-                  </Badge>
-                  <span>状态：{statusLabels[entry.status]}</span>
-                  {entry.progress ? (
-                    <span>Progress: {formatProgress(entry.progress)}</span>
-                  ) : null}
-                  {entry.note ? <span>备注：{entry.note}</span> : null}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      <section>
+        <ItemProgressUpdate
+          id={item.id}
+          status={item.status}
+          rating={item.rating}
+          notes={item.notes}
+          showDeleteButton={true}
+        />
+      </section>
+
+      {item.history.length > 0 && (
+        <Card className="rounded-3xl border-black/5 bg-white/80 shadow-sm">
+          <CardContent className="p-6">
+            <div className="text-xs uppercase tracking-wide text-[#8a837b]">
+              HISTORY
+            </div>
+            <div className="mt-4 space-y-4">
+              {item.history.map((entry, index) => (
+                <Card
+                  key={`${entry.date}-${index}`}
+                  className="rounded-2xl border-black/5 bg-white"
+                >
+                  <CardContent className="flex flex-wrap items-center gap-4 px-4 py-3 text-sm text-[#6f6a63]">
+                    <Badge className="rounded-full px-3 py-1 text-xs">
+                      {formatDate(entry.date)}
+                    </Badge>
+                    <span>Status: {statusLabels[entry.status]}</span>
+                    {entry.progress ? (
+                      <span>Progress: {formatProgress(entry.progress)}</span>
+                    ) : null}
+                    {entry.note ? <span>Note: {entry.note}</span> : null}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

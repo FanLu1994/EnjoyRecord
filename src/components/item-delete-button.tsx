@@ -37,39 +37,27 @@ export default function ItemDeleteButton({ id }: { id: string }) {
   };
 
   return (
-    <div>
+    <>
       {confirming ? (
-        <div className="space-y-2 rounded-xl border border-[#c53030]/30 bg-[#fff5f5] p-3 text-xs text-[#7d1a1a]">
-          <div>Delete this record? This cannot be undone.</div>
-          <div className="flex gap-2">
-            <button
-              onClick={handleDelete}
-              disabled={isDeleting}
-              className="term-btn flex-1 border-[#c53030] text-[#c53030] hover:text-white hover:bg-[#c53030] disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <span>{isDeleting ? "..." : "Confirm delete"}</span>
-            </button>
-            <button
-              onClick={() => setConfirming(false)}
-              disabled={isDeleting}
-              className="term-btn flex-1 border-[#6b6560] text-[#6b6560] hover:text-white hover:bg-[#6b6560] disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <span>Cancel</span>
-            </button>
-          </div>
-        </div>
+        <button
+          onClick={handleDelete}
+          disabled={isDeleting}
+          className="text-xs font-mono text-red-600 bg-red-100 border-2 border-red-400 px-2 py-1 rounded hover:bg-red-200 transition-colors disabled:opacity-50"
+        >
+          {isDeleting ? "..." : "CONFIRM?"}
+        </button>
       ) : (
         <button
           onClick={handleDelete}
           disabled={isDeleting}
-          className="term-btn w-full border-[#c53030] text-[#c53030] hover:text-white hover:bg-[#c53030] disabled:opacity-50 disabled:cursor-not-allowed"
+          className="text-xs font-mono text-red-600 hover:text-red-800 bg-red-50 border border-red-200 px-2 py-1 rounded hover:bg-red-100 transition-colors disabled:opacity-50"
         >
-          <span>{isDeleting ? "..." : "Delete record"}</span>
+          [DEL]
         </button>
       )}
-      {error ? (
-        <div className="mt-2 text-xs text-[#c53030]">{error}</div>
-      ) : null}
-    </div>
+      {error && (
+        <div className="mt-2 text-xs text-red-600">{error}</div>
+      )}
+    </>
   );
 }

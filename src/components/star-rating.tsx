@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 const Star = ({ className }: { className?: string }) => (
   <svg
     viewBox="0 0 20 20"
-    className={cn("h-5 w-5", className)}
+    className={cn("h-4 w-4", className)}
     aria-hidden="true"
   >
     <path
@@ -15,6 +15,39 @@ const Star = ({ className }: { className?: string }) => (
     />
   </svg>
 );
+
+export function StarDisplay({
+  value,
+  size = "sm",
+}: {
+  value: number;
+  size?: "sm" | "md";
+}) {
+  const safeValue = Math.min(10, Math.max(0, value));
+  const percent = (safeValue / 10) * 100;
+  const sizeClasses = size === "sm" ? "h-4 w-4" : "h-5 w-5";
+
+  return (
+    <div className="relative inline-flex items-center">
+      <div className="flex gap-0.5 text-[#d4cfc5]">
+        {Array.from({ length: 5 }).map((_, index) => (
+          <svg key={`star-bg-${index}`} viewBox="0 0 20 20" className={sizeClasses} aria-hidden="true">
+            <path fill="currentColor" d="M10 1.5l2.3 4.7 5.2.8-3.8 3.7.9 5.2L10 13.6 5.4 15.9l.9-5.2L2.5 7l5.2-.8L10 1.5z" />
+          </svg>
+        ))}
+      </div>
+      <div className="absolute inset-0 overflow-hidden" style={{ clipPath: `inset(0 ${100 - percent}% 0 0)` }}>
+        <div className="flex gap-0.5 text-[#f5a524]">
+          {Array.from({ length: 5 }).map((_, index) => (
+            <svg key={`star-fill-${index}`} viewBox="0 0 20 20" className={sizeClasses} aria-hidden="true">
+              <path fill="currentColor" d="M10 1.5l2.3 4.7 5.2.8-3.8 3.7.9 5.2L10 13.6 5.4 15.9l.9-5.2L2.5 7l5.2-.8L10 1.5z" />
+            </svg>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function StarRating({
   value,

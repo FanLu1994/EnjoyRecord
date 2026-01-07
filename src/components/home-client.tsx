@@ -1,8 +1,10 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import type { RecordItem } from "@/lib/data";
 import { resolveProgress } from "@/lib/format";
+import { statusLabels, statusBadgeClass } from "@/lib/labels";
+import { StarDisplay } from "@/components/star-rating";
 
 interface HomeClientProps {
   records: RecordItem[];
@@ -46,7 +48,7 @@ export default function HomeClient({ records }: HomeClientProps) {
       </header>
 
       {records.length > 0 ? (
-        <div className="grid gap-5">
+        <div className="columns-1 sm:columns-2 lg:columns-3 gap-3 space-y-3">
           {records.map((item, index) => {
             const progress = resolveProgress(item);
             const delay = Math.min(index * 60, 300);
@@ -54,85 +56,71 @@ export default function HomeClient({ records }: HomeClientProps) {
               <Link
                 key={item.id}
                 href={`/items/${item.id}`}
-                className="block group"
+                className="block group break-inside-avoid"
                 style={{
                   animation: `fadeInUp 0.4s ease-out ${delay}ms forwards`,
                   opacity: 0,
                 }}
               >
-                <article className="term-card p-5 hover:shadow-md transition-all duration-200 ease-out cursor-pointer border border-[#d4cfc5] hover:border-[#00a86b] rounded-sm">
-                  <div className="flex gap-5">
-                    {/* Cover Image with enhanced design */}
-                    <div
-                      className="shrink-0 w-20 h-28 rounded-sm border border-[#d4cfc5] bg-white flex items-center justify-center overflow-hidden shadow-sm group-hover:shadow-md transition-shadow duration-200"
-                      style={{
-                        background: item.coverUrl
-                          ? `url(${item.coverUrl}) center/cover`
-                          : `linear-gradient(145deg, ${item.cover.tone} 0%, ${item.cover.accent} 100%)`,
-                      }}
-                    >
-                      {!item.coverUrl && (
-                        <span className="font-[var(--font-terminal)] text-3xl text-[#9a958f]/70">
-                          {typeIcon(item.type)}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Content with improved layout */}
-                    <div className="flex-1 min-w-0 flex flex-col">
-                      {/* Title and Rating row */}
-                      <div className="flex items-start justify-between gap-3">
-                        <h3 className="font-[var(--font-terminal)] text-[#1a1915] text-lg leading-snug group-hover:text-[#00a86b] transition-colors duration-200 line-clamp-2">
-                          {item.title}
-                        </h3>
-                        <div className="flex items-center gap-2 shrink-0">
-                          {item.rating && (
-                            <div className="flex items-center gap-1 text-[#d48806]" aria-label={`Rating: ${item.rating}/10`}>
-                              <span className="text-sm">★</span>
-                              <span className="text-xs font-[var(--font-mono)]">{item.rating}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Metadata row */}
-                      <div className="flex items-center gap-3 mt-1 text-xs">
-                        <span className="text-[#9a958f] font-[var(--font-mono)] uppercase tracking-wider">
-                          {item.type}
-                        </span>
-                        <span className="text-[#d4cfc5]">·</span>
-                        <span className="text-[#9a958f] font-[var(--font-mono)]">{item.year}</span>
-                        {item.originalTitle && (
-                          <>
-                            <span className="text-[#d4cfc5]">·</span>
-                            <span className="text-[#6b6560] italic truncate max-w-[200px]">{item.originalTitle}</span>
-                          </>
-                        )}
-                      </div>
-
-                      {/* Progress and Tags */}
-                      <div className="mt-auto pt-3 flex items-center gap-3 text-xs">
-                        {progress && (
-                          <span className="inline-flex items-center gap-1.5 text-[#00a86b] font-[var(--font-mono)] bg-[#00a86b]/8 px-2 py-1 rounded-sm border border-[#00a86b]/20">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#00a86b] animate-pulse" />
-                            {formatProgress(progress)}
-                          </span>
-                        )}
-                        {item.tags && item.tags.length > 0 && (
-                          <div className="flex gap-1.5 flex-wrap">
-                            {item.tags.slice(0, 3).map((tag) => (
-                              <span
-                                key={tag}
-                                className="term-badge text-[10px] px-2 py-1 border-[#d4cfc5] text-[#6b6560] hover:border-[#00a86b]/40 hover:text-[#00a86b] transition-colors duration-150"
-                              >
-                                #{tag}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                <article className="bg-white p-3 hover:shadow-lg transition-all duration-200 ease-out cursor-pointer border border-black/5 hover:border-black/10 rounded-xl mb-3">
+                  {/* Cover Image */}
+                  <div
+                    className="w-full aspect-[3/4] rounded-lg border border-black/5 bg-white flex items-center justify-center overflow-hidden shadow-sm group-hover:shadow transition-shadow duration-200 mb-3"
+                    style={{
+                      background: item.coverUrl
+                        ? `url(${item.coverUrl}) center/cover`
+                        : `linear-gradient(145deg, ${item.cover.tone} 0%, ${item.cover.accent} 100%)`,
+                    }}
+                  >
+                    {!item.coverUrl && (
+                      <span className="font-[var(--font-terminal)] text-4xl text-[#9a958f]/70">
+                        {typeIcon(item.type)}
+                      </span>
+                    )}
                   </div>
+
+                  {/* Title and Rating */}
+                  <div className="flex items-start justify-between gap-2 mb-1.5">
+                    <h3 className="font-[var(--font-terminal)] text-[#1a1915] text-base leading-snug group-hover:text-[#00a86b] transition-colors duration-200 line-clamp-2 flex-1">
+                      {item.title}
+                    </h3>
+                    {item.rating && <StarDisplay value={item.rating} size="sm" />}
+                  </div>
+
+                  {/* Metadata */}
+                  <div className="flex items-center gap-2 mb-2 text-xs">
+                    <span className="text-[#9a958f] font-[var(--font-mono)] uppercase tracking-wider">
+                      {item.type}
+                    </span>
+                    <span className="text-black/10">·</span>
+                    <span className="text-[#9a958f] font-[var(--font-mono)]">{item.year}</span>
+                  </div>
+
+                  {/* Progress and Tags */}
+                  <div className="flex items-center gap-2 text-xs flex-wrap">
+                    <span className={`${statusBadgeClass(item.status)} font-[var(--font-mono)] text-[10px] uppercase tracking-wide`}>
+                      {statusLabels[item.status]}
+                    </span>
+                    {progress && (
+                      <span className="inline-flex items-center gap-1.5 text-[#00a86b] font-[var(--font-mono)] bg-[#00a86b]/8 px-2 py-1 rounded-sm border border-[#00a86b]/20">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#00a86b] animate-pulse" />
+                        {formatProgress(progress)}
+                      </span>
+                    )}
+                  </div>
+
+                  {item.tags && item.tags.length > 0 && (
+                    <div className="flex gap-1.5 flex-wrap mt-2">
+                      {item.tags.slice(0, 3).map((tag) => (
+                        <span
+                          key={tag}
+                          className="term-badge text-[10px] px-2 py-1 border border-black/5 text-[#6b6560] hover:border-[#00a86b]/40 hover:text-[#00a86b] transition-colors duration-150"
+                        >
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </article>
               </Link>
             );

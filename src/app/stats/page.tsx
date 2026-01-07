@@ -8,6 +8,16 @@ export default function StatsPage() {
   const recordItems = getAllRecords();
   const completed = recordItems.filter((item) => item.status === "completed");
   const inProgress = recordItems.filter((item) => item.status === "in_progress");
+
+  // 按类型统计完成数
+  const completedByType = completed.reduce(
+    (acc, item) => {
+      acc[item.type] += 1;
+      return acc;
+    },
+    { book: 0, film: 0, series: 0, game: 0 }
+  );
+
   const avgRating =
     completed.reduce((sum, item) => sum + (item.rating || 0), 0) /
     (completed.length || 1);
@@ -63,8 +73,9 @@ export default function StatsPage() {
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <StatCard label="完成条目" value={`${completed.length} 项`} />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard label="阅读完成" value={`${completedByType.book} 本`} />
+        <StatCard label="观影完成" value={`${completedByType.film + completedByType.series} 部`} />
         <StatCard label="进行中" value={`${inProgress.length} 项`} />
         <StatCard label="平均评分" value={avgRating.toFixed(1)} />
       </div>

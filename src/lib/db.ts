@@ -356,7 +356,7 @@ export const updateRecord = (
   input: {
     status?: RecordStatus;
     rating?: number | null;
-    notes?: string;
+    notes?: string | null;
     progress?: Progress;
     historyNote?: string;
   }
@@ -367,15 +367,22 @@ export const updateRecord = (
   const now = new Date().toISOString();
   const nextStatus = input.status ?? existing.status;
   const nextProgress = input.progress ?? existing.progress;
-  const nextRating =
-    input.rating === undefined
-      ? existing.rating
-      : input.rating === null
+  const nextRating = input.rating === undefined ? existing.rating : input.rating === null ? undefined : input.rating;
+  const nextNotes = input.notes === undefined ? existing.notes : input.notes === null ? undefined : input.notes;
+
+  // Update startedAt when status changes to in_progress
+  const nextStartedAt =
+    input.status === "in_progress" && !existing.startedAt
+      ? now
+      : existing.startedAt;
+
+  // Update completedAt when status changes to completed
+  const nextCompletedAt =
+    input.status === "completed" && !existing.completedAt
+      ? now
+      : input.status !== "completed" && existing.completedAt
         ? undefined
-        : input.rating;
-  const nextNotes = input.notes ?? existing.notes;
-  const nextStartedAt = existing.startedAt;
-  const nextCompletedAt = existing.completedAt;
+        : existing.completedAt;
 
   const shouldAppendHistory =
     input.status !== undefined || input.progress !== undefined || input.historyNote !== undefined;

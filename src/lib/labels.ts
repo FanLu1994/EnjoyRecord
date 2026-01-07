@@ -1,17 +1,17 @@
 import type { MediaType, RecordStatus } from "./data";
 
 export const typeLabels: Record<MediaType, string> = {
-  book: "书籍",
-  film: "电影",
-  series: "剧集",
-  game: "游戏",
+  book: "BOOK",
+  film: "FILM",
+  series: "SERIES",
+  game: "GAME",
 };
 
 export const statusLabels: Record<RecordStatus, string> = {
-  planned: "想",
-  in_progress: "进行中",
-  completed: "完成",
-  paused: "搁置",
+  planned: "PLANNED",
+  in_progress: "IN PROGRESS",
+  completed: "COMPLETED",
+  paused: "PAUSED",
 };
 
 export const typeBadgeClass = (type: MediaType) => {
@@ -41,5 +41,20 @@ export const statusBadgeClass = (status: RecordStatus) => {
       return "bg-orange-100 text-orange-700 border-orange-200";
     default:
       return "bg-slate-100 text-slate-700 border-slate-200";
+  }
+};
+
+export const statusTextClass = (status: RecordStatus) => {
+  switch (status) {
+    case "planned":
+      return "text-zinc-500";
+    case "in_progress":
+      return "text-indigo-600";
+    case "completed":
+      return "text-emerald-600";
+    case "paused":
+      return "text-orange-500";
+    default:
+      return "text-slate-500";
   }
 };

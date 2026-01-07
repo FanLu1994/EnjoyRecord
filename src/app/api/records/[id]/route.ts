@@ -13,6 +13,13 @@ const STATUS_OPTIONS: RecordStatus[] = [
   "paused",
 ];
 
+function normalizeNotes(notes: string | null | undefined): string | null | undefined {
+  if (notes === undefined) return undefined;
+  if (notes === null) return null;
+  const trimmed = notes.trim();
+  return trimmed || null;
+}
+
 export async function PATCH(
   request: Request,
   { params }: { params: { id: string } | Promise<{ id: string }> }
@@ -31,7 +38,7 @@ export async function PATCH(
     progress?: { current: number; total?: number; unit: ProgressUnit };
     note?: string;
     rating?: number | null;
-    notes?: string;
+    notes?: string | null;
   };
 
   if (!id) {
@@ -45,43 +52,32 @@ export async function PATCH(
   let progress: Progress | undefined;
   if (body.progress) {
     const current = Number(body.progress.current);
-    const total =
-      body.progress.total === undefined ? undefined : Number(body.progress.total);
-    if (
-      Number.isNaN(current) ||
-      (total !== undefined && Number.isNaN(total)) ||
-      !body.progress.unit
-    ) {
+    const total = body.progress.total === undefined ? undefined : Number(body.progress.total);
+    if (Number.isNaN(current) || (total !== undefined && Number.isNaN(total)) || !body.progress.unit) {
       return NextResponse.json({ error: "Invalid progress values." }, { status: 400 });
     }
-    progress = {
-      current,
-      total,
-      unit: body.progress.unit,
-    };
+    progress = { current, total, unit: body.progress.unit };
   }
 
   let rating: number | null | undefined = undefined;
   if (body.rating !== undefined) {
-    if (body.rating === null) {
-      rating = null;
-    } else {
+    rating = body.rating === null ? null : (() => {
       const numericRating = Number(body.rating);
       if (Number.isNaN(numericRating)) {
-        return NextResponse.json({ error: "Invalid rating value." }, { status: 400 });
+        throw new Error("Invalid rating value.");
       }
       if (numericRating < 0 || numericRating > 10) {
-        return NextResponse.json({ error: "Rating must be between 0 and 10." }, { status: 400 });
+        throw new Error("Rating must be between 0 and 10.");
       }
-      rating = Math.round(numericRating * 10) / 10;
-    }
+      return Math.round(numericRating * 10) / 10;
+    })();
   }
 
-  if (!body.status && !progress && !body.note && body.rating === undefined && !body.notes) {
+  if (body.status === undefined && !progress && body.note === undefined && body.rating === undefined && body.notes === undefined) {
     return NextResponse.json({ error: "No updates provided." }, { status: 400 });
   }
 
-  if (body.notes && body.notes.trim().length > 200) {
+  if (body.notes && typeof body.notes === "string" && body.notes.length > 200) {
     return NextResponse.json({ error: "评价不能超过 200 字" }, { status: 400 });
   }
 
@@ -91,7 +87,7 @@ export async function PATCH(
       progress,
       historyNote: body.note,
       rating,
-      notes: body.notes?.trim() || undefined,
+      notes: normalizeNotes(body.notes),
     });
 
     if (!updated) {
@@ -101,12 +97,13 @@ export async function PATCH(
     return NextResponse.json({ record: updated });
   } catch (error) {
     await logError("record update failed", { id, error, body });
-    return NextResponse.json({ error: "Update failed." }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : "Update failed.";
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: { id: string } | Promise<{ id: string }> }
 ) {
   const resolvedParams = await Promise.resolve(params);
@@ -114,12 +111,9 @@ export async function DELETE(
   if (!id) {
     return NextResponse.json({ error: "Missing record id." }, { status: 400 });
   }
-  const auth = requireAdminPassword(_request);
+  const auth = requireAdminPassword(request);
   if (!auth.ok) {
-    return NextResponse.json(
-      { error: auth.error },
-      { status: auth.status }
-    );
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
 
   try {
