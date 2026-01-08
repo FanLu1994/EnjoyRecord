@@ -11,7 +11,9 @@ module.exports = {
       max_memory_restart: '1G',
       env: {
         NODE_ENV: 'production',
-        PORT: 80
+        PORT: 80,
+        HTTP_PROXY: 'http://127.0.0.1:7890',
+        HTTPS_PROXY: 'http://127.0.0.1:7890'
       },
       error_file: './logs/err.log',
       out_file: './logs/out.log',
