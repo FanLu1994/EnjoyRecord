@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import StarRating from "@/components/star-rating";
 import { useAdminFetch } from "@/components/admin-auth-provider";
 import ItemDeleteButton from "@/components/item-delete-button";
+import { Pencil, Copy, Check } from "lucide-react";
 
 const STATUS_OPTIONS: RecordStatus[] = [
   "planned",
@@ -35,6 +36,8 @@ export default function ItemProgressUpdate({
   const [ratingValue, setRatingValue] = useState<number | null>(rating ?? null);
   const [note, setNote] = useState("");
   const [review, setReview] = useState(notes ?? "");
+  const [isReviewEditing, setIsReviewEditing] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -69,6 +72,7 @@ export default function ItemProgressUpdate({
       }
 
       setNote("");
+      setIsReviewEditing(false);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Update failed.");
@@ -76,6 +80,17 @@ export default function ItemProgressUpdate({
       setIsSaving(false);
     }
   }, [id, nextStatus, ratingValue, note, review, status, rating, notes, adminFetch, router]);
+
+  const handleCopyReview = useCallback(async () => {
+    if (!review) return;
+    try {
+      await navigator.clipboard.writeText(review);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
+  }, [review]);
 
   return (
     <Card className="rounded-3xl border-black/5 bg-white/80 shadow-sm relative">
@@ -135,18 +150,50 @@ export default function ItemProgressUpdate({
             />
           </div>
           <div className="grid gap-2">
-            <label className="text-xs text-[#8a837b]">Review</label>
-            <textarea
-              value={review}
-              onChange={(event) => setReview(event.target.value)}
-              placeholder="Max 200 characters"
-              maxLength={200}
-              rows={3}
-              className="term-input resize-none"
-            />
-            <div className="text-[10px] text-[#9a958f] font-[var(--font-mono)]">
-              {review.length}/200
+            <div className="flex items-center justify-between">
+              <label className="text-xs text-[#8a837b]">Review</label>
+              {!isReviewEditing && (
+                <div className="flex items-center gap-2">
+                  {review && (
+                    <button
+                      type="button"
+                      onClick={handleCopyReview}
+                      className="text-[#6b6560] hover:text-[#1c1a17] transition-colors"
+                      title={copied ? "Copied!" : "Copy review"}
+                    >
+                      {copied ? <Check size={14} /> : <Copy size={14} />}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setIsReviewEditing(true)}
+                    className="text-[#6b6560] hover:text-[#1c1a17] transition-colors"
+                    title="Edit review"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                </div>
+              )}
             </div>
+            {isReviewEditing ? (
+              <>
+                <textarea
+                  value={review}
+                  onChange={(event) => setReview(event.target.value)}
+                  placeholder="Max 200 characters"
+                  maxLength={200}
+                  rows={3}
+                  className="term-input resize-none"
+                />
+                <div className="text-[10px] text-[#9a958f] font-[var(--font-mono)]">
+                  {review.length}/200
+                </div>
+              </>
+            ) : (
+              <div className="text-sm text-[#5d564f] min-h-[60px] p-3 bg-black/5 rounded-xl">
+                {review || <span className="text-[#9a958f] italic">No review yet</span>}
+              </div>
+            )}
           </div>
         </div>
         {error ? (

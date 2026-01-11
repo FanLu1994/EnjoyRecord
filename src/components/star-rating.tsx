@@ -64,70 +64,74 @@ export default function StarRating({
   displayValue?: number | null;
   showValue?: boolean;
 }) {
-  const [hoverValue, setHoverValue] = useState<number | null>(null);
+  const [inputValue, setInputValue] = useState<string>("");
+  const [isFocused, setIsFocused] = useState(false);
   const safeValue = Math.min(10, Math.max(0, value));
-  const displayRating = hoverValue ?? safeValue;
-  const percent = (displayRating / 10) * 100;
-  const shownValue =
-    displayValue === undefined ? displayRating : displayValue;
+  const shownValue = displayValue === undefined ? safeValue : displayValue;
+  const percent = (safeValue / 10) * 100;
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (disabled) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const percentage = x / rect.width;
-    const rating = Math.round(percentage * 10 * 10) / 10;
-    const clampedRating = Math.min(10, Math.max(0, rating));
-    setHoverValue(clampedRating);
-    onChange(clampedRating);
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setInputValue(val);
+
+    const num = parseFloat(val);
+    if (!isNaN(num) && num >= 0 && num <= 10) {
+      onChange(num);
+    }
   };
 
-  const handleMouseLeave = () => {
-    setHoverValue(null);
+  const handleInputBlur = () => {
+    setIsFocused(false);
+    const num = parseFloat(inputValue);
+    if (isNaN(num) || num < 0 || num > 10) {
+      setInputValue(safeValue > 0 ? safeValue.toString() : "");
+    } else {
+      setInputValue(num.toString());
+    }
   };
+
+  const displayedInput = isFocused ? inputValue : (inputValue || (safeValue > 0 ? safeValue.toString() : ""));
 
   return (
-    <div className={cn("relative inline-flex items-center gap-2", className)}>
-      <div
-        className="relative inline-flex items-center"
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
-      >
+    <div className={cn("flex items-center gap-3", className)}>
+      {/* Stars display */}
+      <div className="relative inline-flex items-center">
         <div className="flex gap-1 text-[#d4cfc5]">
-        {Array.from({ length: 5 }).map((_, index) => (
-          <Star key={`star-bg-${index}`} />
-        ))}
+          {Array.from({ length: 5 }).map((_, index) => (
+            <Star key={`star-bg-${index}`} />
+          ))}
         </div>
         <div
           className="absolute inset-0 overflow-hidden"
           style={{ clipPath: `inset(0 ${100 - percent}% 0 0)` }}
         >
           <div className="flex gap-1 text-[#f5a524]">
-          {Array.from({ length: 5 }).map((_, index) => (
-            <Star key={`star-fill-${index}`} />
-          ))}
+            {Array.from({ length: 5 }).map((_, index) => (
+              <Star key={`star-fill-${index}`} />
+            ))}
           </div>
         </div>
+      </div>
+
+      {/* Value input */}
+      <div className="relative">
         <input
-          type="range"
+          type="number"
           min="0"
           max="10"
           step="0.1"
-          value={safeValue}
-          onChange={(event) => onChange(Number(event.target.value))}
+          value={displayedInput}
+          onChange={handleInputChange}
+          onFocus={() => setIsFocused(true)}
+          onBlur={handleInputBlur}
           disabled={disabled}
-          aria-label="Rating"
-          className={cn(
-            "absolute inset-0 h-6 w-full cursor-pointer opacity-0",
-            disabled && "cursor-not-allowed"
-          )}
+          placeholder="0-10"
+          className="w-16 px-2 py-1 text-center text-sm font-medium border border-[#d4cfc5] rounded-lg bg-white text-[#1c1a17] placeholder:text-[#9a958f] focus:outline-none focus:ring-2 focus:ring-[#f5a524] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
         />
-      </div>
-      {showValue ? (
-        <span className="text-xs text-[#6b6560]">
-          {shownValue === null ? "—" : shownValue.toFixed(1)}
+        <span className="absolute right-[-1.25rem] top-1/2 -translate-y-1/2 text-xs text-[#9a958f]">
+          /10
         </span>
-      ) : null}
+      </div>
     </div>
   );
 }
