@@ -84,7 +84,22 @@ export default function ItemProgressUpdate({
   const handleCopyReview = useCallback(async () => {
     if (!review) return;
     try {
-      await navigator.clipboard.writeText(review);
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(review);
+      } else {
+        // Fallback for older browsers or non-secure contexts
+        const textArea = document.createElement("textarea");
+        textArea.value = review;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        textArea.style.top = "-999999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        const successful = document.execCommand("copy");
+        document.body.removeChild(textArea);
+        if (!successful) throw new Error("Copy failed");
+      }
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
