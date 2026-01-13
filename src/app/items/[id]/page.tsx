@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import ItemProgressUpdate from "@/components/item-progress-update";
+import { ItemShareButton } from "@/components/item-share-button";
 import { getRecordById } from "@/lib/db";
 import { formatDate, formatProgress } from "@/lib/format";
 import {
@@ -27,20 +28,23 @@ export default async function ItemDetailPage({
       <section>
         <Card className="rounded-3xl border-black/5 bg-white/80 shadow-sm">
           <CardContent className="p-6">
-            <div className="flex flex-wrap items-center gap-2 text-xs">
-              <Badge
-                variant="secondary"
-                className={`rounded-full ${typeBadgeClass(item.type)}`}
-              >
-                {typeLabels[item.type]}
-              </Badge>
-              <Badge
-                variant="secondary"
-                className={`rounded-full ${statusBadgeClass(item.status)}`}
-              >
-                {statusLabels[item.status]}
-              </Badge>
-              <span className="text-[#8a837b]">{item.year}</span>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <Badge
+                  variant="secondary"
+                  className={`rounded-full ${typeBadgeClass(item.type)}`}
+                >
+                  {typeLabels[item.type]}
+                </Badge>
+                <Badge
+                  variant="secondary"
+                  className={`rounded-full ${statusBadgeClass(item.status)}`}
+                >
+                  {statusLabels[item.status]}
+                </Badge>
+                <span className="text-[#8a837b]">{item.year}</span>
+              </div>
+              <ItemShareButton item={item} />
             </div>
             <div className="mt-6 flex flex-col sm:flex-row gap-6">
               <div
