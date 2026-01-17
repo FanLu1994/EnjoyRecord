@@ -82,7 +82,7 @@ export async function PATCH(
   }
 
   try {
-    const updated = updateRecord(id, {
+    const updated = await updateRecord(id, {
       status: body.status,
       progress,
       historyNote: body.note,
@@ -117,7 +117,7 @@ export async function DELETE(
   }
 
   try {
-    const removed = deleteRecord(id);
+    const removed = await deleteRecord(id);
     if (!removed) {
       return NextResponse.json({ error: "Record not found." }, { status: 404 });
     }

@@ -13,7 +13,9 @@
       "Bash(python:*)",
       "Bash(curl:*)",
       "Bash(wc:*)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(pnpm add:*)",
+      "Bash(pnpm build)"
     ]
   }
 }

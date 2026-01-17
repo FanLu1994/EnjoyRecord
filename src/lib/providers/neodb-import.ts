@@ -147,7 +147,7 @@ const fetchShelfPage = async (
 
 export const importFromNeoDB = async (token: string) => {
   const existing = new Set(
-    getAllRecords().map((record) => normalizeKey(record.type, record.title))
+    (await getAllRecords()).map((record) => normalizeKey(record.type, record.title))
   );
   let imported = 0;
   let skipped = 0;
@@ -175,7 +175,7 @@ export const importFromNeoDB = async (token: string) => {
             skipped += 1;
             continue;
           }
-          createRecord({
+          await createRecord({
             type: mapped.type,
             title: mapped.title,
             originalTitle: mapped.originalTitle,

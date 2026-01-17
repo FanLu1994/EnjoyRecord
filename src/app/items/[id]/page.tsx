@@ -20,7 +20,7 @@ export default async function ItemDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const item = getRecordById(id);
+  const item = await getRecordById(id);
   if (!item) return notFound();
 
   return (

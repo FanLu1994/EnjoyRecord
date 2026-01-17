@@ -8,7 +8,7 @@ import { requireAdminPassword } from "@/lib/admin-auth-server";
 export const runtime = "nodejs";
 
 export async function GET() {
-  const records = getAllRecords();
+  const records = await getAllRecords();
   return NextResponse.json({ records });
 }
 
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
   try {
     // Create local record first
     const { startedAt, completedAt, ...rest } = body;
-    const record = createRecord({
+    const record = await createRecord({
       ...rest,
       notes: rest.notes?.trim() || undefined,
     });

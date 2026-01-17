@@ -4,8 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 
 export const dynamic = "force-dynamic";
 
-export default function StatsPage() {
-  const recordItems = getAllRecords();
+export default async function StatsPage() {
+  const recordItems = await getAllRecords();
   const completed = recordItems.filter((item) => item.status === "completed");
   const inProgress = recordItems.filter((item) => item.status === "in_progress");
 
